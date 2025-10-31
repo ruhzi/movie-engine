@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'; // <-- 1. Import useEffect
+import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,9 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Brain, Clapperboard, Search, Zap } from 'lucide-react'; // <-- 2. Added 'Zap' icon
+import { Brain, Clapperboard, Search, Zap } from 'lucide-react';
 
-// --- 3. This component is now for REAL data ---
+// --- This component is now for REAL data ---
 function InitialSuggestions({ movies, loading }) {
   if (loading) {
     // Show a clean loading state
@@ -37,12 +37,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
-
-  // --- 4. NEW STATE FOR TRENDING MOVIES ---
   const [initialMovies, setInitialMovies] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // --- 5. NEW useEffect TO FETCH TRENDING MOVIES ON LOAD ---
   useEffect(() => {
     const fetchTrending = async () => {
       try {
@@ -53,14 +50,14 @@ export default function App() {
         const data = await response.json();
         setInitialMovies(data);
       } catch (err) {
-        setError(err.message); // You can show this error if you want
+        setError(err.message);
       } finally {
         setInitialLoading(false);
       }
     };
 
     fetchTrending();
-  }, []); // The empty array [] means this runs ONCE when the app first loads
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -69,7 +66,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResults([]);
-    setSearched(true); // <-- This now triggers the UI to change
+    setSearched(true); 
 
     const params = new URLSearchParams({
       query: query,
@@ -93,7 +90,6 @@ export default function App() {
   };
 
   const renderSearchResults = () => {
-    // This function handles the results *after* a search
     if (loading) {
       return <div className="text-center text-slate-400">Loading search results...</div>;
     }
@@ -114,50 +110,59 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-6xl mx-auto">
-        
-        <header className="text-center pb-12 mb-12 border-b border-border/50">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-            Hybrid Movie Recommender
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Find movies by plot (Vector Search) + discover related films (Graph Search).
-          </p>
-        </header>
+    // This is the main full-height container
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      
+      {/* --- THIS IS THE UPDATED HEADER --- */}
+      {/* I changed "bg-background" to "bg-secondary" to give it a different tone */}
+      <header className="sticky top-0 z-50 w-full bg-secondary border-b border-border/50">
+        <div className="max-w-6xl mx-auto px-8 pt-8 pb-6">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+              Hybrid Movie Recommender
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Find movies by plot (Vector Search) + discover related films (Graph Search).
+            </p>
+          </div>
 
-        <form onSubmit={handleSearch} className="flex gap-4 mb-12">
-          <Input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., 'a fun sci-fi movie about aliens visiting earth'"
-            className="flex-grow text-lg p-6"
-            disabled={loading}
-          />
-          <Button type="submit" size="lg" className="text-lg px-8" disabled={loading}>
-            {loading ? 'Searching...' : <Search className="w-5 h-5 mr-2" />}
-            {loading ? '' : 'Search'}
-          </Button>
-        </form>
+          <form onSubmit={handleSearch} className="flex gap-4">
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g., 'a fun sci-fi movie about aliens visiting earth'"
+              className="flex-grow text-lg p-6"
+              disabled={loading}
+            />
+            <Button type="submit" size="lg" className="text-lg px-8" disabled={loading}>
+              {loading ? 'Searching...' : <Search className="w-5 h-5 mr-2" />}
+              {loading ? '' : 'Search'}
+            </Button>
+          </form>
+        </div>
+      </header>
 
-        <main>
-          {/* --- 6. NEW LOGIC: SHOW TRENDING OR SEARCH RESULTS --- */}
+      {/* --- This is the scrollable content area --- */}
+      <main className="flex-grow overflow-y-auto p-8">
+        <div className="max-w-6xl mx-auto">
           {searched ? (
             renderSearchResults() 
           ) : (
             <InitialSuggestions movies={initialMovies} loading={initialLoading} />
           )}
-        </main>
-      </div>
+        </div>
+      </main>
+
     </div>
   );
 }
 
+// --- Movie Card Component (No changes needed) ---
 function MovieCard({ movie, index }) {
   const isVector = movie.source === 'vector';
   const isGraph = movie.source === 'graph';
-  const isTrending = movie.source === 'trending'; // <-- 7. Check for new source
+  const isTrending = movie.source === 'trending';
 
   const placeholderText = movie.title ? movie.title.replace(/\s/g, '+') : 'Loading';
   let placeholderUrl = `https://placehold.co/500x750/1e293b/94a3b8?text=${placeholderText}`; // Default (Vector)
@@ -204,7 +209,6 @@ function MovieCard({ movie, index }) {
             {movie.genre || 'N/A'} • {movie.year || 'N/A'}
           </CardDescription>
           
-          {/* --- 8. NEW STYLING FOR ALL 3 TAGS --- */}
           <div 
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
               isVector 
@@ -220,7 +224,6 @@ function MovieCard({ movie, index }) {
             
             {isVector && `Semantic Match (Score: ${movie.score.toFixed(3)})`}
             {isGraph && 'Graph Recommendation'}
-            {/* TMDB scores are out of 10, so toFixed(1) is better */}
             {isTrending && `Trending (Score: ${movie.score.toFixed(1)})`}
           </div>
         </div>
