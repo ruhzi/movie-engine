@@ -1,3 +1,5 @@
+import animatePlugin from "tailwindcss-animate"; // <-- 1. Import the plugin
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
@@ -44,6 +46,14 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        // --- 2. ADDED THIS NEW COLOR OBJECT ---
+        "accent-amber": {
+          DEFAULT: "hsl(var(--accent-amber))",
+          foreground: "hsl(var(--accent-amber-foreground))",
+          "soft-bg": "hsl(var(--accent-amber-soft-bg))",
+          "soft-fg": "hsl(var(--accent-amber-soft-fg))",
+        },
+        // --- END OF NEW CODE ---
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -67,12 +77,36 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // --- 3. ADDED KEYFRAMES FOR SHADCN ANIMATE-IN ---
+        "animate-in": {
+          from: {
+            opacity: "0",
+            transform: "translateY(2px)",
+          },
+          to: {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+        "fade-in": {
+          from: {
+            opacity: "0",
+          },
+          to: {
+            opacity: "1",
+          },
+        },
+        // --- END OF NEW CODE ---
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // --- 4. ADDED ANIMATIONS FOR SHADCN ---
+        "animate-in": "animate-in 0.3s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        // --- END OF NEW CODE ---
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [animatePlugin], // <-- 5. Use the imported plugin
 }

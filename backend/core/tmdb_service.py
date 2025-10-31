@@ -1,7 +1,8 @@
 import requests
 import logging
 from typing import List, Dict, Optional
-from backend.core.config import TMDB_API_KEY
+# Make sure to import from .config (relative import)
+from .config import TMDB_API_KEY
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -15,6 +16,45 @@ class TMDBService:
 
         if not self.api_key:
             logger.warning("TMDB_API_KEY is not set. Movie details will not be enriched.")
+
+    # --- THIS IS THE NEW FUNCTION ---
+    def get_trending_movies(self, limit: int = 6) -> List[Dict]:
+        """Get daily trending movies from TMDB, already in our app's format."""
+        if not self.api_key:
+            return []
+
+        try:
+            trending_url = f"{self.base_url}/trending/movie/day"
+            params = {"api_key": self.api_key}
+            response = requests.get(trending_url, params=params)
+            response.raise_for_status()
+            
+            tmdb_results = response.json().get("results", [])
+            
+            trending_movies = []
+            for movie in tmdb_results[:limit]:
+                tmdb_id = movie.get("id")
+                imdb_id = self._get_imdb_id(tmdb_id) # Re-use our existing function
+                
+                poster_path = movie.get("poster_path")
+                poster_url = f"{self.poster_base_url}{poster_path}" if poster_path else None
+                imdb_url = f"{self.imdb_base_url}{imdb_id}" if imdb_id else None
+
+                trending_movies.append({
+                    "title": movie.get("title"),
+                    "genre": "Trending", # We can't get genre from this endpoint, so use a label
+                    "year": movie.get("release_date", "N/A").split("-")[0],
+                    "score": movie.get("vote_average"),
+                    "source": "trending", # A new source type
+                    "poster_url": poster_url,
+                    "imdb_url": imdb_url,
+                })
+            return trending_movies
+
+        except Exception as e:
+            logger.error(f"Error getting trending movies: {e}")
+            return []
+    # --- END OF NEW FUNCTION ---
 
     def _search_movie(self, title: str, year: Optional[str]) -> Optional[Dict]:
         """Search TMDB for a movie and return the best match."""

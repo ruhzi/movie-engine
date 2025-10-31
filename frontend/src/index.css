@@ -33,10 +33,12 @@
     --ring: 212.7 26.8% 83.9%;
 
     --radius: 0.5rem;
-  }
 
-  .dark {
-    /* ... (can add dark mode overrides here if needed) ... */
+    /* --- ADD THESE NEW ACCENT COLORS --- */
+    --accent-amber: 43 96% 56%;
+    --accent-amber-foreground: 35 91% 20%;
+    --accent-amber-soft-bg: 36 80% 20%;
+    --accent-amber-soft-fg: 43 96% 78%;
   }
 }
 

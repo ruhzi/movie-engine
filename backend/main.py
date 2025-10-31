@@ -46,6 +46,23 @@ async def root():
     return {"message": "Movie Recommendation API is running!"}
 
 
+# --- THIS IS THE NEW ENDPOINT YOU'RE ADDING ---
+@app.get("/trending", response_model=List[Dict])
+async def get_trending_movies():
+    """
+    Get daily trending movies, pre-enriched with TMDB data.
+    """
+    recommender = app_state.get("recommender")
+    if not recommender:
+        raise HTTPException(status_code=503, detail="Recommender is not initialized")
+    
+    # We re-use the tmdb_service from our recommender
+    # (The Recommender class initializes tmdb_service as self.tmdb)
+    results = recommender.tmdb.get_trending_movies(limit=6)
+    return results
+# --- END OF NEW ENDPOINT ---
+
+
 @app.get("/recommend", response_model=List[Dict])
 async def recommend_movies(
     query: str = Query(..., description="Describe the movie or theme"),
