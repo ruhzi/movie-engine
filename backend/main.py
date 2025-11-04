@@ -4,12 +4,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.semantic_search import SemanticSearch
 from core.config import DATA_DIR
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = FastAPI(
     title="Movie Recommendation API",
     description="Backend API for the Movie Engine project",
     version="1.0.0"
 )
+
+PORT = os.get_env("PORT")
 
 # --- CORS CONFIG ---
 # Only allow your deployed frontend domain to make API calls
@@ -39,4 +45,4 @@ def recommend(query: str):
 # --- LOCAL TEST ENTRYPOINT ---
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=10000)
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT)
