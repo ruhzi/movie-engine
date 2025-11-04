@@ -1,86 +1,42 @@
 # backend/main.py
-from fastapi import FastAPI, Query, HTTPException
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict
+from core.semantic_search import SemanticSearch
+from core.config import DATA_DIR
 
-# Import your REAL recommender
-# FIX: Corrected import path to include 'backend.'
-from backend.core.recommender import Recommender
-
-# Initialize FastAPI
-app = FastAPI(title="Movie Recommendation API", version="1.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+app = FastAPI(
+    title="Movie Recommendation API",
+    description="Backend API for the Movie Engine project",
+    version="1.0.0"
 )
 
-# --- Use FastAPI Lifespan for connections ---
-# This dict will hold our shared recommender instance
-app_state = {}
+# --- CORS CONFIG ---
+# Only allow your deployed frontend domain to make API calls
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://movie-engine-klnvsj1hw-ruhzis-projects.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.on_event("startup")
-def startup_event():
-    """On API startup, initialize the recommender."""
-    print("Initializing recommender...")
-    # Simplified: No args needed, it reads from config
-    recommender = Recommender()
-    app_state["recommender"] = recommender
-    print("Recommender initialized.")
-
-@app.on_event("shutdown")
-def shutdown_event():
-    """On API shutdown, close the Neo4j connection."""
-    print("Closing connections...")
-    if "recommender" in app_state:
-        app_state["recommender"].close() # Call the close() method
-    print("Connections closed.")
-# --- End Lifespan ---
-
-
+# --- ROUTES ---
 @app.get("/")
-async def root():
-    """Root endpoint for health checks."""
-    return {"message": "Movie Recommendation API is running!"}
+def root():
+    return {"message": "Movie Engine backend is running!"}
 
 
-# --- THIS IS THE NEW ENDPOINT YOU'RE ADDING ---
-@app.get("/trending", response_model=List[Dict])
-async def get_trending_movies():
-    """
-    Get daily trending movies, pre-enriched with TMDB data.
-    """
-    recommender = app_state.get("recommender")
-    if not recommender:
-        raise HTTPException(status_code=503, detail="Recommender is not initialized")
-    
-    # We re-use the tmdb_service from our recommender
-    # (The Recommender class initializes tmdb_service as self.tmdb)
-    results = recommender.tmdb.get_trending_movies(limit=6)
-    return results
-# --- END OF NEW ENDPOINT ---
+@app.get("/recommend")
+def recommend(query: str):
+    ss = SemanticSearch()
+    results = ss.search(query)
+    return {"query": query, "results": results}
 
 
-@app.get("/recommend", response_model=List[Dict])
-async def recommend_movies(
-    query: str = Query(..., description="Describe the movie or theme"),
-    # FIX: Synced default limit to 4
-    vector_limit: int = Query(4, description="Num vector results"),
-    graph_limit: int = Query(4, description="Num graph expansion results")
-):
-    """
-    Example: /recommend?query=sci-fi+movie+about+AI+rebellion
-    """
-    recommender = app_state.get("recommender")
-    if not recommender:
-        # Service Unavailable
-        raise HTTPException(status_code=503, detail="Recommender is not initialized")
-
-    results = recommender.recommend(
-        query=query, 
-        vector_limit=vector_limit, 
-        graph_limit=graph_limit
-    )
-    return results
+# --- LOCAL TEST ENTRYPOINT ---
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=10000)

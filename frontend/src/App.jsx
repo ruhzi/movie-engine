@@ -10,13 +10,19 @@ import {
 } from "@/components/ui/card";
 import { Brain, Clapperboard, Search, Zap } from 'lucide-react';
 
+// ✅ Backend base URL (switches automatically)
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (window.location.hostname === "localhost"
+    ? "http://127.0.0.1:10000"
+    : "https://movie-backend.onrender.com");
+
 // --- This component is now for REAL data ---
 function InitialSuggestions({ movies, loading }) {
   if (loading) {
-    // Show a clean loading state
     return <div className="text-center text-slate-400">Loading trending movies...</div>;
   }
-  
+
   return (
     <div className="animate-in fade-in duration-500">
       <h2 className="text-2xl font-semibold text-center mb-6 text-slate-300">
@@ -43,10 +49,8 @@ export default function App() {
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/trending");
-        if (!response.ok) {
-          throw new Error("Could not fetch trending movies.");
-        }
+        const response = await fetch(`${API_BASE_URL}/trending`);
+        if (!response.ok) throw new Error("Could not fetch trending movies.");
         const data = await response.json();
         setInitialMovies(data);
       } catch (err) {
@@ -66,14 +70,14 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResults([]);
-    setSearched(true); 
+    setSearched(true);
 
     const params = new URLSearchParams({
       query: query,
       vector_limit: 4,
       graph_limit: 4,
     });
-    const url = `http://127.0.0.1:8000/recommend?${params.toString()}`;
+    const url = `${API_BASE_URL}/recommend?${params.toString()}`;
 
     try {
       const response = await fetch(url);
@@ -99,7 +103,7 @@ export default function App() {
     if (searched && results.length === 0) {
       return <div className="text-center text-slate-400">No movies found for that query.</div>;
     }
-    
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {results.map((movie, index) => (
@@ -110,11 +114,7 @@ export default function App() {
   };
 
   return (
-    // This is the main full-height container
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      
-      {/* --- THIS IS THE UPDATED HEADER --- */}
-      {/* I changed "bg-background" to "bg-secondary" to give it a different tone */}
       <header className="sticky top-0 z-50 w-full bg-secondary border-b border-border/50">
         <div className="max-w-6xl mx-auto px-8 pt-8 pb-6">
           <div className="text-center mb-8">
@@ -143,53 +143,42 @@ export default function App() {
         </div>
       </header>
 
-      {/* --- This is the scrollable content area --- */}
       <main className="flex-grow overflow-y-auto p-8">
         <div className="max-w-6xl mx-auto">
-          {searched ? (
-            renderSearchResults() 
-          ) : (
+          {searched ? renderSearchResults() : (
             <InitialSuggestions movies={initialMovies} loading={initialLoading} />
           )}
         </div>
       </main>
-
     </div>
   );
 }
 
-// --- Movie Card Component (No changes needed) ---
+// --- MovieCard Component (unchanged) ---
 function MovieCard({ movie, index }) {
   const isVector = movie.source === 'vector';
   const isGraph = movie.source === 'graph';
   const isTrending = movie.source === 'trending';
 
   const placeholderText = movie.title ? movie.title.replace(/\s/g, '+') : 'Loading';
-  let placeholderUrl = `https://placehold.co/500x750/1e293b/94a3b8?text=${placeholderText}`; // Default (Vector)
-  
+  let placeholderUrl = `https://placehold.co/500x750/1e293b/94a3b8?text=${placeholderText}`;
   if (isGraph) {
-    placeholderUrl = `https://placehold.co/500x750/103a3a/a5f3fc?text=${placeholderText}`; // Amber/Teal
+    placeholderUrl = `https://placehold.co/500x750/103a3a/a5f3fc?text=${placeholderText}`;
   } else if (isTrending) {
-    placeholderUrl = `https://placehold.co/500x750/363328/fcd34d?text=${placeholderText}`; // Gold/Yellow
+    placeholderUrl = `https://placehold.co/500x750/363328/fcd34d?text=${placeholderText}`;
   }
-  
-  const CardContentWrapper = ({ children }) => (
+
+  const CardContentWrapper = ({ children }) =>
     movie.imdb_url ? (
-      <a
-        href={movie.imdb_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block group"
-      >
+      <a href={movie.imdb_url} target="_blank" rel="noopener noreferrer" className="block group">
         {children}
       </a>
     ) : (
       <div className="block group">{children}</div>
-    )
-  );
+    );
 
   return (
-    <Card 
+    <Card
       className="animate-in fade-in duration-500 overflow-hidden transition-all ease-out hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20"
       style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
     >
@@ -208,20 +197,20 @@ function MovieCard({ movie, index }) {
           <CardDescription className="mb-4">
             {movie.genre || 'N/A'} • {movie.year || 'N/A'}
           </CardDescription>
-          
-          <div 
+
+          <div
             className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-              isVector 
-                ? 'bg-primary/10 text-primary/90 border-primary/20' 
+              isVector
+                ? 'bg-primary/10 text-primary/90 border-primary/20'
                 : isGraph
                   ? 'bg-accent-amber-soft-bg/20 text-accent-amber-soft-fg border-accent-amber/20'
-                  : 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50' // Trending tag
+                  : 'bg-yellow-900/50 text-yellow-300 border-yellow-700/50'
             }`}
           >
             {isVector && <Brain className="w-4 h-4 mr-2" />}
             {isGraph && <Clapperboard className="w-4 h-4 mr-2" />}
             {isTrending && <Zap className="w-4 h-4 mr-2" />}
-            
+
             {isVector && `Semantic Match (Score: ${movie.score.toFixed(3)})`}
             {isGraph && 'Graph Recommendation'}
             {isTrending && `Trending (Score: ${movie.score.toFixed(1)})`}
